@@ -1,0 +1,80 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'net.ltgt.apt' version '0.10'
+}
+
+apply plugin: 'java'
+
+// To override default project layout
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+        resources {
+            srcDirs = ['configuration']
+        }
+    }
+
+    test {
+        java {
+            srcDirs = ['tst']
+        }
+    }
+}
+
+group 'fun.agoda.java'
+version '1.0'
+
+sourceCompatibility = 1.8
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+dependencies {
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.1'
+
+    compile 'org.projectlombok:lombok:1.18.2'
+    annotationProcessor 'org.projectlombok:lombok:1.18.2'
+
+    compile group: 'com.google.inject', name: 'guice', version: '4.2.2'
+
+    testCompile 'org.jmockit:jmockit:1.9'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+task createFatJar(type: Jar) {
+    baseName = project.name + '-all'
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+    manifest {
+        attributes(
+                'Main-Class': 'fun.agoda.downloader.ApplicationStarter'
+        )
+    }
+}
+
+task runFatJar(type: JavaExec) {
+    dependsOn createFatJar
+    
+    // Currently gradle doesn't support commandLineArguments out of the box thus using property arguments.
+    if (project.hasProperty('commandLineArgs')) {
+        args(commandLineArgs.split(','))
+    }
+    classpath = createFatJar.outputs.files
+    main = 'fun.agoda.downloader.ApplicationStarter'
+}
+
+task startDownloading(dependsOn: [build, runFatJar])

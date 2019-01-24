@@ -1,0 +1,1 @@
+ftp://test.rebex.net/readme.txt/additional-attributes?user=demo&password=password
